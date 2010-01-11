@@ -10,18 +10,18 @@ public class Route extends ListActivity implements AsyncBackend.Delegate {
   public static final String KEY_ROUTE = "route";
   public static final String KEY_DIRECTION = "direction";
 
-  private String mRoute;
-  private String mQuery;
-  private MuniAPI.Direction[] mDirections;
+  private String mRouteId;
+  private String mRouteName;
+  private ProximoBus.Run[] mRuns;
   private AsyncBackend mBackend;
 
-  private class RouteQuery implements AsyncBackend.Query {
-    final String mQuery;
-    RouteQuery(String query) {
-      mQuery = query;
+  private class RunsQuery implements AsyncBackend.Query {
+    final String mRouteId;
+    RunsQuery(String routeId) {
+      mRouteId = routeId;
     }
     public Object runQuery(Backend backend) throws Exception {
-      return backend.fetchRoute(mQuery);
+      return backend.fetchRunsOnRoute(mRouteId);
     }
   }
 
@@ -30,8 +30,8 @@ public class Route extends ListActivity implements AsyncBackend.Delegate {
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     super.onCreate(savedInstanceState);
 
-    mQuery = getIntent().getExtras().getString(Backend.KEY_QUERY);
-    mRoute = getIntent().getExtras().getString(KEY_ROUTE);
+    mRouteId = getIntent().getExtras().getString(ViewState.ROUTE_ID_KEY);
+    mRouteName = getIntent().getExtras().getString(ViewState.ROUTE_NAME_KEY);
 
     ListAdapter adapter = new ArrayAdapter<String>(
         this,
@@ -40,7 +40,7 @@ public class Route extends ListActivity implements AsyncBackend.Delegate {
     setListAdapter(adapter);
 
     mBackend = new AsyncBackend(this, this);
-    mBackend.start(new RouteQuery(mQuery));
+    mBackend.start(new RunsQuery(mRouteId));
   }
 
   @Override
@@ -50,21 +50,22 @@ public class Route extends ListActivity implements AsyncBackend.Delegate {
 
   @Override
   public void onAsyncResult(Object data) {
-    mDirections = (MuniAPI.Direction[]) data;
-    ListAdapter adapter = new ArrayAdapter<MuniAPI.Direction>(
+    mRuns = (ProximoBus.Run[]) data;
+    ListAdapter adapter = new ArrayAdapter<ProximoBus.Run>(
         this,
         android.R.layout.simple_list_item_1,
-        mDirections);
+        mRuns);
     setListAdapter(adapter);
   }
 
   @Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
-    MuniAPI.Direction direction = mDirections[position];
+    ProximoBus.Run run = mRuns[position];
     Intent intent = new Intent(this, Stops.class);
-    intent.putExtra(Route.KEY_ROUTE, mRoute);
-    intent.putExtra(Route.KEY_DIRECTION, direction.name);
-    intent.putExtra(Backend.KEY_QUERY, direction.url);
+    intent.putExtra(ViewState.ROUTE_NAME_KEY, mRouteName);
+    intent.putExtra(ViewState.ROUTE_ID_KEY, mRouteId);
+    intent.putExtra(ViewState.RUN_NAME_KEY, run.displayName);
+    intent.putExtra(ViewState.RUN_ID_KEY, run.id);
     startActivity(intent);
   }
 }

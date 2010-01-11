@@ -11,22 +11,29 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
   // Intent extra data on the stop name.
   public static final String KEY_NAME = "name";
 
-  private MuniAPI.Stop mStop;
-  private String mRoute;
-  private String mDirection;
+  private String mRouteId;
+  private String mRouteName;
+  private String mRunId;
+  private String mRunName;
+  private String mStopId;
+  private String mStopName;
+  private ProximoBus.Prediction[] mPredictions;
+
   private AsyncBackend mBackend;
   private StarDBAdapter mStarDB;
   private CheckBox mStarView;
 
-  private class StopQuery implements AsyncBackend.Query {
-    final String mQuery;
-    final boolean mReload;
-    StopQuery(String query, boolean reload) {
-      mQuery = query;
-      mReload = reload;
+  private class PredictionsForStopQuery implements AsyncBackend.Query {
+    final String mStopId;
+    final String mRouteId;
+    final boolean mForceRefresh;
+    PredictionsForStopQuery(String routeId, String stopId, boolean forceRefresh) {
+      mRouteId = routeId;
+      mStopId = stopId;
+      mForceRefresh = forceRefresh;
     }
     public Object runQuery(Backend backend) throws Exception {
-      return backend.fetchStop(mQuery, mReload);
+      return backend.fetchPredictionsForRouteAtStop(mRouteId, mStopId, mForceRefresh);
     }
   }
 
@@ -39,22 +46,25 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
     mStarDB = new StarDBAdapter(this);
 
     Bundle extras = getIntent().getExtras();
-    mRoute = extras.getString(Route.KEY_ROUTE);
-    mDirection = extras.getString(Route.KEY_DIRECTION);
-    mStop = new MuniAPI.Stop(extras.getString(KEY_NAME),
-                             extras.getString(Backend.KEY_QUERY));
+    mRouteId = extras.getString(ViewState.ROUTE_ID_KEY);
+    mRouteName = extras.getString(ViewState.ROUTE_NAME_KEY);
+    mRunId = extras.getString(ViewState.RUN_ID_KEY);
+    mRunName = extras.getString(ViewState.RUN_NAME_KEY);
+    mStopId = extras.getString(ViewState.STOP_ID_KEY);
+    mStopName = extras.getString(ViewState.STOP_NAME_KEY);
 
     TextView title = (TextView) findViewById(R.id.title);
-    title.setText(mStop.name);
+    title.setText(mStopName);
     TextView subtitle = (TextView) findViewById(R.id.subtitle);
-    subtitle.setText(mRoute + ": " + mDirection);
+    subtitle.setText(mRouteName + ": " + mRunName);
 
     mStarView = (CheckBox) findViewById(R.id.star);
     mStarView.setOnClickListener(this);
-    mStarView.setChecked(mStarDB.getStarred(mStop.url));
+    // FIXME: Make Favorites work with the ProximoBus backend
+    //mStarView.setChecked(mStarDB.getStarred(mStop.url));
 
     mBackend = new AsyncBackend(this, this);
-    mBackend.start(new StopQuery(mStop.url, false));
+    mBackend.start(new PredictionsForStopQuery(mRouteId, mStopId, false));
   }
 
   @Override
@@ -64,15 +74,15 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
 
   @Override
   public void onAsyncResult(Object data) {
-    mStop.times = (MuniAPI.Stop.Time[]) data;
+    mPredictions = (ProximoBus.Prediction[]) data;
 
     ListView list = (ListView) findViewById(R.id.list);
     ListAdapter adapter;
-    if (mStop.times.length > 0) {
-      adapter = new ArrayAdapter<MuniAPI.Stop.Time>(
+    if (mPredictions.length > 0) {
+      adapter = new ArrayAdapter<ProximoBus.Prediction>(
           this,
           android.R.layout.simple_list_item_1,
-          mStop.times);
+          mPredictions);
     } else {
       adapter = new ArrayAdapter<String>(
           this,
@@ -84,14 +94,14 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
 
   @Override
   public void onClick(View view) {
-    switch (view.getId()) {
+    /*switch (view.getId()) {
       case R.id.star:
         if (mStarView.isChecked())
           mStarDB.setStarred(mStop, mRoute, mDirection);
         else
           mStarDB.unStar(mStop);
         break;
-    }
+        }*/
   }
 
   @Override
@@ -105,7 +115,7 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
   public boolean onOptionsItemSelected(MenuItem item) {
     switch (item.getItemId()) {
     case R.id.refresh:
-      mBackend.start(new StopQuery(mStop.url, true));
+      mBackend.start(new PredictionsForStopQuery(mRouteId, mStopId, true));
       return true;
     }
     return false;

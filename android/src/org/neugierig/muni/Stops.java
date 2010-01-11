@@ -7,20 +7,23 @@ import android.widget.*;
 import android.view.*;
 
 public class Stops extends ListActivity implements AsyncBackend.Delegate {
-  private MuniAPI.Stop[] mStops;
+  private ProximoBus.Stop[] mStops;
 
-  private String mRoute;
-  private String mDirection;
-  private String mQuery;
+  private String mRouteName;
+  private String mRouteId;
+  private String mRunName;
+  private String mRunId;
   private AsyncBackend mBackend;
 
-  private class StopsQuery implements AsyncBackend.Query {
-    final String mQuery;
-    StopsQuery(String query) {
-      mQuery = query;
+  private class StopsOnRunQuery implements AsyncBackend.Query {
+    final String mRouteId;
+    final String mRunId;
+    StopsOnRunQuery(String routeId, String runId) {
+      mRouteId = routeId;
+      mRunId = runId;
     }
     public Object runQuery(Backend backend) throws Exception {
-      return backend.fetchStops(mQuery);
+      return backend.fetchStopsOnRun(mRouteId, mRunId);
     }
   }
 
@@ -29,9 +32,10 @@ public class Stops extends ListActivity implements AsyncBackend.Delegate {
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     super.onCreate(savedInstanceState);
 
-    mQuery = getIntent().getExtras().getString(Backend.KEY_QUERY);
-    mRoute = getIntent().getExtras().getString(Route.KEY_ROUTE);
-    mDirection = getIntent().getExtras().getString(Route.KEY_DIRECTION);
+    mRouteName = getIntent().getExtras().getString(ViewState.ROUTE_NAME_KEY);
+    mRouteId = getIntent().getExtras().getString(ViewState.ROUTE_ID_KEY);
+    mRunName = getIntent().getExtras().getString(ViewState.RUN_NAME_KEY);
+    mRunId = getIntent().getExtras().getString(ViewState.RUN_ID_KEY);
 
     ListAdapter adapter = new ArrayAdapter<String>(
         this,
@@ -40,7 +44,7 @@ public class Stops extends ListActivity implements AsyncBackend.Delegate {
     setListAdapter(adapter);
 
     mBackend = new AsyncBackend(this, this);
-    mBackend.start(new StopsQuery(mQuery));
+    mBackend.start(new StopsOnRunQuery(mRouteId, mRunId));
   }
 
   @Override
@@ -50,8 +54,8 @@ public class Stops extends ListActivity implements AsyncBackend.Delegate {
 
   @Override
   public void onAsyncResult(Object data) {
-    mStops = (MuniAPI.Stop[]) data;
-    ListAdapter adapter = new ArrayAdapter<MuniAPI.Stop>(
+    mStops = (ProximoBus.Stop[]) data;
+    ListAdapter adapter = new ArrayAdapter<ProximoBus.Stop>(
         this,
         android.R.layout.simple_list_item_1,
         mStops);
@@ -60,12 +64,14 @@ public class Stops extends ListActivity implements AsyncBackend.Delegate {
 
   @Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
-    MuniAPI.Stop stop = mStops[position];
+    ProximoBus.Stop stop = mStops[position];
     Intent intent = new Intent(this, Stop.class);
-    intent.putExtra(Route.KEY_ROUTE, mRoute);
-    intent.putExtra(Route.KEY_DIRECTION, mDirection);
-    intent.putExtra(Stop.KEY_NAME, stop.name);
-    intent.putExtra(Backend.KEY_QUERY, stop.url);
+    intent.putExtra(ViewState.ROUTE_ID_KEY, mRouteId);
+    intent.putExtra(ViewState.ROUTE_NAME_KEY, mRouteName);
+    intent.putExtra(ViewState.RUN_ID_KEY, mRunId);
+    intent.putExtra(ViewState.RUN_NAME_KEY, mRunName);
+    intent.putExtra(ViewState.STOP_ID_KEY, stop.id);
+    intent.putExtra(ViewState.STOP_NAME_KEY, stop.displayName);
     startActivity(intent);
   }
 }

@@ -22,42 +22,42 @@ public class Backend {
     mDatabase = new Database(context);
   }
 
-  MuniAPI.Route[] fetchRoutes()
+  ProximoBus.Route[] fetchRoutes()
       throws MalformedURLException, IOException, JSONException
   {
-    return MuniAPI.parseRoutes(queryAPI("", false));
+    return ProximoBus.parseRoutes(queryAPI(ProximoBus.getAllRoutesPath(), false));
   }
 
-  MuniAPI.Direction[] fetchRoute(String query)
+  ProximoBus.Run[] fetchRunsOnRoute(String routeId)
       throws MalformedURLException, IOException, JSONException
   {
-    return MuniAPI.parseRoute(queryAPI(query, false));
+    return ProximoBus.parseRuns(queryAPI(ProximoBus.getRunsOnRoutePath(routeId), false));
   }
 
-  MuniAPI.Stop[] fetchStops(String query)
+  ProximoBus.Stop[] fetchStopsOnRun(String routeId, String runId)
       throws MalformedURLException, IOException, JSONException
   {
-    return MuniAPI.parseStops(queryAPI(query, false));
+    return ProximoBus.parseStops(queryAPI(ProximoBus.getStopsOnRunPath(routeId, runId), false));
   }
 
-  MuniAPI.Stop.Time[] fetchStop(String query, boolean force_refresh)
+  ProximoBus.Prediction[] fetchPredictionsForRouteAtStop(String routeId, String stopId, boolean forceRefresh)
       throws MalformedURLException, IOException, JSONException
   {
-    return MuniAPI.parseStop(queryAPI(query, force_refresh));
+    return ProximoBus.parsePredictions(queryAPI(ProximoBus.getStopPredictionsByRoutePath(stopId, routeId), forceRefresh));
   }
 
-  String queryAPI(String query, boolean reload)
+  String queryAPI(String path, boolean reload)
       throws MalformedURLException, IOException
   {
     String data = null;
 
     if (!reload)
-      data = mDatabase.get(query);
+      data = mDatabase.get(path);
 
     if (data == null) {
-      data = MuniAPI.queryNetwork(query);
+      data = ProximoBus.queryNetwork(path);
       Log.i(TAG, "Network fetch: " + data);
-      mDatabase.put(query, data);
+      mDatabase.put(path, data);
     }
 
     return data;

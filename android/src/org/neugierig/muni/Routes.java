@@ -10,7 +10,7 @@ import android.widget.*;
 
 public class Routes extends ListActivity
                     implements AsyncBackend.Delegate {
-  private MuniAPI.Route[] mRoutes;
+  private ProximoBus.Route[] mRoutes;
   private SplitListAdapter mSplitListAdapter;
   private AsyncBackend mBackend;
   private StarDBAdapter mStarDB;
@@ -68,8 +68,8 @@ public class Routes extends ListActivity
 
   @Override
   public void onAsyncResult(Object data) {
-    mRoutes = (MuniAPI.Route[]) data;
-    ListAdapter adapter = new ArrayAdapter<MuniAPI.Route>(
+    mRoutes = (ProximoBus.Route[]) data;
+    ListAdapter adapter = new ArrayAdapter<ProximoBus.Route>(
         this,
         android.R.layout.simple_list_item_1,
         mRoutes);
@@ -93,11 +93,11 @@ public class Routes extends ListActivity
                       mCursor.getString(mCursor.getColumnIndexOrThrow("query")));
       startActivity(intent);
     } else {
-      MuniAPI.Route route =
+      ProximoBus.Route route =
           mRoutes[mSplitListAdapter.translateList2Position(position)];
       Intent intent = new Intent(this, Route.class);
-      intent.putExtra(Route.KEY_ROUTE, route.name);
-      intent.putExtra(Backend.KEY_QUERY, route.url);
+      intent.putExtra(ViewState.ROUTE_NAME_KEY, route.displayName);
+      intent.putExtra(ViewState.ROUTE_ID_KEY, route.id);
       startActivity(intent);
     }
   }
