@@ -98,7 +98,8 @@ public class Routes extends ListActivity
       Intent intent = new Intent(this, Route.class);
       intent.putExtra(Route.KEY_ROUTE, route.name);
       intent.putExtra(Backend.KEY_QUERY, route.url);
-      startActivity(intent);
+      setResult(RESULT_OK, intent);
+      finish();
     }
   }
 }

@@ -10,8 +10,10 @@ public class Route extends ListActivity implements AsyncBackend.Delegate {
   public static final String KEY_ROUTE = "route";
   public static final String KEY_DIRECTION = "direction";
 
-  private String mRoute;
-  private String mQuery;
+  public static final int ROUTE_SELECT_REQUEST = 1;
+
+  private String mRoute = null;
+  private String mQuery = null;
   private MuniAPI.Direction[] mDirections;
   private AsyncBackend mBackend;
 
@@ -30,17 +32,32 @@ public class Route extends ListActivity implements AsyncBackend.Delegate {
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     super.onCreate(savedInstanceState);
 
-    mQuery = getIntent().getExtras().getString(Backend.KEY_QUERY);
-    mRoute = getIntent().getExtras().getString(KEY_ROUTE);
+    setViewParams(getIntent());
 
+    if (mRoute == null) {
+      // Call on the route selector so the user can choose a route.
+      Intent intent = new Intent(this, Routes.class);
+      startActivityForResult(intent, ROUTE_SELECT_REQUEST);
+    }
+
+  }
+
+  private void setViewParams(Intent intent) {
     ListAdapter adapter = new ArrayAdapter<String>(
         this,
         android.R.layout.simple_list_item_1,
         new String[] {});
     setListAdapter(adapter);
 
-    mBackend = new AsyncBackend(this, this);
-    mBackend.start(new RouteQuery(mQuery));
+    Bundle extras = intent.getExtras();
+    if (extras != null) {
+      mQuery = intent.getExtras().getString(Backend.KEY_QUERY);
+      mRoute = intent.getExtras().getString(KEY_ROUTE);
+
+      mBackend = new AsyncBackend(this, this);
+      mBackend.start(new RouteQuery(mQuery));
+      setIntent(intent);
+    }
   }
 
   @Override
@@ -65,6 +82,24 @@ public class Route extends ListActivity implements AsyncBackend.Delegate {
     intent.putExtra(Route.KEY_ROUTE, mRoute);
     intent.putExtra(Route.KEY_DIRECTION, direction.name);
     intent.putExtra(Backend.KEY_QUERY, direction.url);
-    startActivity(intent);
+    setResult(RESULT_OK, intent);
+    finish();
   }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    switch (requestCode) {
+    case ROUTE_SELECT_REQUEST:
+      if (resultCode == RESULT_OK) {
+        setViewParams(data);
+      }
+      else {
+        // If the user cancelled chosing a route, then that implicitly
+        // cancels selecting a direction too.
+        setResult(RESULT_CANCELED);
+        finish();
+      }
+    }
+  }
+
 }

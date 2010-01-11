@@ -7,11 +7,13 @@ import android.widget.*;
 import android.view.*;
 
 public class Stops extends ListActivity implements AsyncBackend.Delegate {
+  public static final int DIRECTION_SELECT_REQUEST = 1;
+
   private MuniAPI.Stop[] mStops;
 
-  private String mRoute;
-  private String mDirection;
-  private String mQuery;
+  private String mRoute = null;
+  private String mDirection = null;
+  private String mQuery = null;
   private AsyncBackend mBackend;
 
   private class StopsQuery implements AsyncBackend.Query {
@@ -29,9 +31,17 @@ public class Stops extends ListActivity implements AsyncBackend.Delegate {
     requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
     super.onCreate(savedInstanceState);
 
-    mQuery = getIntent().getExtras().getString(Backend.KEY_QUERY);
-    mRoute = getIntent().getExtras().getString(Route.KEY_ROUTE);
-    mDirection = getIntent().getExtras().getString(Route.KEY_DIRECTION);
+    setViewParams(getIntent());
+
+    // If the caller didn't tell us what direction to work with,
+    // ask the user.
+    if (mDirection == null) {
+      Intent intent = new Intent(this, Route.class);
+      startActivityForResult(intent, DIRECTION_SELECT_REQUEST);
+    }
+  }
+
+  private void setViewParams(Intent intent) {
 
     ListAdapter adapter = new ArrayAdapter<String>(
         this,
@@ -39,8 +49,15 @@ public class Stops extends ListActivity implements AsyncBackend.Delegate {
         new String[] {});
     setListAdapter(adapter);
 
-    mBackend = new AsyncBackend(this, this);
-    mBackend.start(new StopsQuery(mQuery));
+    Bundle extras = intent.getExtras();
+    if (extras != null) {
+      mQuery = extras.getString(Backend.KEY_QUERY);
+      mRoute = extras.getString(Route.KEY_ROUTE);
+      mDirection = extras.getString(Route.KEY_DIRECTION);
+
+      mBackend = new AsyncBackend(this, this);
+      mBackend.start(new StopsQuery(mQuery));
+    }
   }
 
   @Override
@@ -69,4 +86,21 @@ public class Stops extends ListActivity implements AsyncBackend.Delegate {
     setResult(RESULT_OK, intent);
     finish();
   }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    switch (requestCode) {
+    case DIRECTION_SELECT_REQUEST:
+      if (resultCode == RESULT_OK) {
+        setViewParams(data);
+      }
+      else {
+        // If the user cancelled chosing a direction, then that implicitly
+        // cancels selecting a stop too.
+        setResult(RESULT_CANCELED);
+        finish();
+      }
+    }
+  }
+
 }
