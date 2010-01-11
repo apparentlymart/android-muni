@@ -70,7 +70,7 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
   }
 
   @Override
-  public void onAsyncResult(Object data) {
+  public void onAsyncResult(Object data, AsyncBackend.Query query) {
     mPredictions = (ProximoBus.Prediction[]) data;
 
     ListView list = (ListView) findViewById(R.id.list);

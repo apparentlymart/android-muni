@@ -67,7 +67,7 @@ public class Routes extends ListActivity
   }
 
   @Override
-  public void onAsyncResult(Object data) {
+  public void onAsyncResult(Object data, AsyncBackend.Query query) {
     mRoutes = (ProximoBus.Route[]) data;
     ListAdapter adapter = new ArrayAdapter<ProximoBus.Route>(
         this,

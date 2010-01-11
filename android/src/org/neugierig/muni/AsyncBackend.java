@@ -14,7 +14,7 @@ class AsyncBackend {
   public interface Delegate {
     // Return the result of a query.  If there was an error, it will
     // never get called.
-    public void onAsyncResult(Object obj);
+    public void onAsyncResult(Object obj, Query query);
   }
 
   // A Query is a snippet of code that is passed to the backend
@@ -84,7 +84,7 @@ class AsyncBackend {
         switch (msg.what) {
           case MSG_RESULT:
             mActivity.setProgressBarIndeterminateVisibility(false);
-            mDelegate.onAsyncResult(msg.obj);
+            mDelegate.onAsyncResult(msg.obj, query);
             break;
           case MSG_EXCEPTION:
             mActivity.setProgressBarIndeterminateVisibility(false);

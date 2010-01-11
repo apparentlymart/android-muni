@@ -47,7 +47,7 @@ public class Route extends ListActivity implements AsyncBackend.Delegate {
   }
 
   @Override
-  public void onAsyncResult(Object data) {
+  public void onAsyncResult(Object data, AsyncBackend.Query query) {
     mRuns = (ProximoBus.Run[]) data;
     ListAdapter adapter = new ArrayAdapter<ProximoBus.Run>(
         this,

@@ -53,7 +53,7 @@ public class Stops extends ListActivity implements AsyncBackend.Delegate {
   }
 
   @Override
-  public void onAsyncResult(Object data) {
+  public void onAsyncResult(Object data, AsyncBackend.Query query) {
     mStops = (ProximoBus.Stop[]) data;
     ListAdapter adapter = new ArrayAdapter<ProximoBus.Stop>(
         this,
