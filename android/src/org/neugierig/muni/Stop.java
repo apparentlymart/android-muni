@@ -8,8 +8,6 @@ import android.util.Log;
 
 public class Stop extends Activity implements AsyncBackend.Delegate,
                                               View.OnClickListener {
-  // Intent extra data on the stop name.
-  public static final String KEY_NAME = "name";
 
   private String mRouteId;
   private String mRouteName;

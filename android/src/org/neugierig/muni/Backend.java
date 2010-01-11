@@ -14,8 +14,6 @@ import org.json.*;
 public class Backend {
   // Tag for logging.
   private static final String TAG = "muni";
-  // Intent extra indicating the backend query.
-  public static final String KEY_QUERY = "query";
 
   Backend(Context context) {
     mContext = context;

@@ -7,8 +7,6 @@ import android.widget.*;
 import android.view.*;
 
 public class Route extends ListActivity implements AsyncBackend.Delegate {
-  public static final String KEY_ROUTE = "route";
-  public static final String KEY_DIRECTION = "direction";
 
   private String mRouteId;
   private String mRouteName;
