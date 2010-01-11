@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.*;
 import android.widget.*;
 import android.util.Log;
+import java.util.HashMap;
 
 public class Stop extends Activity implements AsyncBackend.Delegate,
                                               View.OnClickListener {
@@ -21,6 +22,9 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
   private StarDBAdapter mStarDB;
   private CheckBox mStarView;
 
+  private HashMap<String, String> mRouteNames = new HashMap<String, String>();
+  private HashMap<String, String> mRunNames = new HashMap<String, String>();
+
   private class PredictionsForStopQuery implements AsyncBackend.Query {
     final String mStopId;
     final String mRouteId;
@@ -31,8 +35,58 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
       mForceRefresh = forceRefresh;
     }
     public Object runQuery(Backend backend) throws Exception {
-      return backend.fetchPredictionsForRouteAtStop(mRouteId, mStopId, mForceRefresh);
+      return backend.fetchPredictionsForStop(mStopId, mForceRefresh);
     }
+  }
+
+  private class PredictionsListAdapter extends ArrayAdapter<ProximoBus.Prediction> {
+
+    public PredictionsListAdapter(Stop context, ProximoBus.Prediction[] objects) {
+      super(context, android.R.layout.simple_list_item_1, objects);
+    }
+
+    public View getView(int position, View convertView, ViewGroup parent) {
+      View ret;
+
+      if (convertView != null) {
+        ret = convertView;
+      }
+      else {
+        ret = View.inflate(this.getContext(), R.layout.prediction_item, null);
+      }
+
+      ProximoBus.Prediction prediction = getItem(position);
+
+      String routeDisplayName;
+      String runDisplayName;
+
+      if (mRouteNames.containsKey(prediction.routeId)) {
+        routeDisplayName = mRouteNames.get(prediction.routeId);
+      }
+      else {
+        routeDisplayName = prediction.routeId;
+      }
+
+      if (mRunNames.containsKey(prediction.runId)) {
+        runDisplayName = mRunNames.get(prediction.runId);
+      }
+      else {
+        runDisplayName = prediction.runId;
+      }
+
+      TextView routeNameView = (TextView) ret.findViewById(R.id.route_name);
+      routeNameView.setText(routeDisplayName);
+
+      TextView runNameView = (TextView) ret.findViewById(R.id.run_name);
+      runNameView.setText(runDisplayName);
+      
+      TextView predictedTimeView = (TextView) ret.findViewById(R.id.predicted_time);
+      predictedTimeView.setText(prediction.predictedTimeForDisplay());
+      
+
+      return ret;
+    }
+
   }
 
   @Override
@@ -50,6 +104,9 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
     mRunName = extras.getString(ViewState.RUN_NAME_KEY);
     mStopId = extras.getString(ViewState.STOP_ID_KEY);
     mStopName = extras.getString(ViewState.STOP_NAME_KEY);
+
+    mRouteNames.put(mRouteId, mRouteName);
+    mRunNames.put(mRunId, mRunName);
 
     TextView title = (TextView) findViewById(R.id.title);
     title.setText(mStopName);
@@ -76,9 +133,8 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
     ListView list = (ListView) findViewById(R.id.list);
     ListAdapter adapter;
     if (mPredictions.length > 0) {
-      adapter = new ArrayAdapter<ProximoBus.Prediction>(
+      adapter = new PredictionsListAdapter(
           this,
-          android.R.layout.simple_list_item_1,
           mPredictions);
     } else {
       adapter = new ArrayAdapter<String>(

@@ -66,6 +66,10 @@ class ProximoBus {
     public int minutes;
     public boolean isDeparting;
 
+    public String predictedTimeForDisplay() {
+      return this.displayName;
+    }
+
     public static Prediction fromJsonObject(JSONObject obj) throws JSONException {
       Prediction prediction = new Prediction();
       prediction.routeId = obj.getString("route_id");
@@ -81,13 +85,9 @@ class ProximoBus {
         }
       }
       else {
-        if (prediction.minutes == 1) {
-          prediction.displayName = "1 minute";
-        }
-        else {
-          prediction.displayName = prediction.minutes+" minutes";
-        }
+        prediction.displayName = prediction.minutes+" min";
       }
+
       return prediction;
     }
   }
@@ -108,6 +108,10 @@ class ProximoBus {
 
   static String getStopPredictionsByRoutePath(String stopId, String routeId) {
     return String.format(Stop.PREDICTIONS_BY_ROUTE_PATH_FORMAT, stopId, URLEncoder.encode(routeId));
+  }
+
+  static String getStopPredictionsPath(String stopId) {
+    return String.format(Stop.PREDICTIONS_PATH_FORMAT, stopId);
   }
 
   static Route[] parseRoutes(String data) throws JSONException {
