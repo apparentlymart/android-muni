@@ -39,6 +39,28 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
     }
   }
 
+  private class RouteQuery implements AsyncBackend.Query {
+    final String mRouteId;
+    RouteQuery(String routeId) {
+      mRouteId = routeId;
+    }
+    public Object runQuery(Backend backend) throws Exception {
+      return backend.fetchRoute(mRouteId);
+    }
+  }
+
+  private class RunQuery implements AsyncBackend.Query {
+    final String mRouteId;
+    final String mRunId;
+    RunQuery(String routeId, String runId) {
+      mRouteId = routeId;
+      mRunId = runId;
+    }
+    public Object runQuery(Backend backend) throws Exception {
+      return backend.fetchRun(mRouteId, mRunId);
+    }
+  }
+
   private class PredictionsListAdapter extends ArrayAdapter<ProximoBus.Prediction> {
 
     public PredictionsListAdapter(Stop context, ProximoBus.Prediction[] objects) {
@@ -64,14 +86,20 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
         routeDisplayName = mRouteNames.get(prediction.routeId);
       }
       else {
+        // Use the routeId as a placeholder for now,
+        // and start a query to find the real name.
         routeDisplayName = prediction.routeId;
+        mBackend.start(new RouteQuery(prediction.routeId));
       }
 
       if (mRunNames.containsKey(prediction.runId)) {
         runDisplayName = mRunNames.get(prediction.runId);
       }
       else {
-        runDisplayName = prediction.runId;
+        // Leave this blank for now, and start a query
+        // to find the run name.
+        runDisplayName = "";
+        mBackend.start(new RunQuery(prediction.routeId, prediction.runId));
       }
 
       TextView routeNameView = (TextView) ret.findViewById(R.id.route_name);
@@ -110,8 +138,6 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
 
     TextView title = (TextView) findViewById(R.id.title);
     title.setText(mStopName);
-    TextView subtitle = (TextView) findViewById(R.id.subtitle);
-    subtitle.setText(mRouteName + ": " + mRunName);
 
     mStarView = (CheckBox) findViewById(R.id.star);
     mStarView.setOnClickListener(this);
@@ -128,21 +154,45 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
 
   @Override
   public void onAsyncResult(Object data, AsyncBackend.Query query) {
-    mPredictions = (ProximoBus.Prediction[]) data;
+    if (query instanceof PredictionsForStopQuery) {
+      mPredictions = (ProximoBus.Prediction[]) data;
 
-    ListView list = (ListView) findViewById(R.id.list);
-    ListAdapter adapter;
-    if (mPredictions.length > 0) {
-      adapter = new PredictionsListAdapter(
+      ListView list = (ListView) findViewById(R.id.list);
+      ListAdapter adapter;
+      if (mPredictions.length > 0) {
+        adapter = new PredictionsListAdapter(
           this,
           mPredictions);
-    } else {
-      adapter = new ArrayAdapter<String>(
+      } else {
+        adapter = new ArrayAdapter<String>(
           this,
           android.R.layout.simple_list_item_1,
           new String[] {"(no arrivals predicted)"});
+      }
+      list.setAdapter(adapter);
     }
-    list.setAdapter(adapter);
+    else if (query instanceof RouteQuery) {
+      ProximoBus.Route route = (ProximoBus.Route) data;
+      mRouteNames.put(route.id, route.displayName);
+
+      ListView list = (ListView) findViewById(R.id.list);
+      ListAdapter adapter = list.getAdapter();
+      if (adapter instanceof PredictionsListAdapter) {
+        PredictionsListAdapter pladapter = (PredictionsListAdapter) adapter;
+        pladapter.notifyDataSetChanged();
+      }
+    }
+    else if (query instanceof RunQuery) {
+      ProximoBus.Run run = (ProximoBus.Run) data;
+      mRunNames.put(run.id, run.displayName);
+
+      ListView list = (ListView) findViewById(R.id.list);
+      ListAdapter adapter = list.getAdapter();
+      if (adapter instanceof PredictionsListAdapter) {
+        PredictionsListAdapter pladapter = (PredictionsListAdapter) adapter;
+        pladapter.notifyDataSetChanged();
+      }
+    }
   }
 
   @Override
