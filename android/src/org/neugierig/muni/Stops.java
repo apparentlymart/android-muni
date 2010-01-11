@@ -66,6 +66,7 @@ public class Stops extends ListActivity implements AsyncBackend.Delegate {
     intent.putExtra(Route.KEY_DIRECTION, mDirection);
     intent.putExtra(Stop.KEY_NAME, stop.name);
     intent.putExtra(Backend.KEY_QUERY, stop.url);
-    startActivity(intent);
+    setResult(RESULT_OK, intent);
+    finish();
   }
 }

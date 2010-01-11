@@ -1,12 +1,26 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
+
     <item android:id="@+id/add"
           android:title="Add Bookmark"
           android:icon="@android:drawable/ic_menu_add"
           />
+
     <!-- The "Refresh" icon used in the contacts list is part of
          com.android.internal.  :( -->
     <item android:id="@+id/refresh"
           android:title="Refresh"
           android:icon="@android:drawable/ic_menu_search"
           />
+
+    <item android:id="@+id/change_stop"
+          android:title="Change Stop"
+          android:icon="@android:drawable/ic_menu_search"
+          />
+
+    <item android:id="@+id/change_route"
+          android:title="Change Route"
+          android:icon="@android:drawable/ic_menu_search"
+          />
+
+
 </menu>

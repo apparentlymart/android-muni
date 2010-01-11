@@ -1,6 +1,7 @@
 package org.neugierig.muni;
 
 import android.app.*;
+import android.content.*;
 import android.os.Bundle;
 import android.view.*;
 import android.widget.*;
@@ -10,6 +11,7 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
                                               View.OnClickListener {
   // Intent extra data on the stop name.
   public static final String KEY_NAME = "name";
+  public static final int STOP_SELECT_REQUEST = 1;
 
   private MuniAPI.Stop mStop;
   private String mRoute;
@@ -38,11 +40,24 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
 
     mStarDB = new StarDBAdapter(this);
 
-    Bundle extras = getIntent().getExtras();
-    mRoute = extras.getString(Route.KEY_ROUTE);
-    mDirection = extras.getString(Route.KEY_DIRECTION);
-    mStop = new MuniAPI.Stop(extras.getString(KEY_NAME),
-                             extras.getString(Backend.KEY_QUERY));
+    setViewParams(getIntent());
+  }
+
+  private void setViewParams(Intent intent) {
+    Bundle extras = intent.getExtras();
+    if (extras != null) {
+      mRoute = extras.getString(Route.KEY_ROUTE);
+      mDirection = extras.getString(Route.KEY_DIRECTION);
+      mStop = new MuniAPI.Stop(extras.getString(KEY_NAME),
+                               extras.getString(Backend.KEY_QUERY));
+    }
+    else {
+      // FIXME: This is just a placeholder default until this activity
+      // is adapted to have some decent cold-start behavior.
+      mRoute = "F-Market&Wharves";
+      mDirection = "Outbound to Castro";
+      mStop = new MuniAPI.Stop("Jones St & Beach St", "a=sf-muni&r=F&d=F__OBCTRO&s=5184");
+    }
 
     TextView title = (TextView) findViewById(R.id.title);
     title.setText(mStop.name);
@@ -52,6 +67,16 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
     mStarView = (CheckBox) findViewById(R.id.star);
     mStarView.setOnClickListener(this);
     mStarView.setChecked(mStarDB.getStarred(mStop.url));
+
+    // Empty out the list while we load the new data
+    // so we don't confuse the user.
+    ListView list = (ListView) findViewById(R.id.list);
+    ListAdapter adapter = new ArrayAdapter<String>(
+        this,
+        android.R.layout.simple_list_item_1,
+        new String[0]
+    );
+    list.setAdapter(adapter);
 
     mBackend = new AsyncBackend(this, this);
     mBackend.start(new StopQuery(mStop.url, false));
@@ -107,7 +132,23 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
     case R.id.refresh:
       mBackend.start(new StopQuery(mStop.url, true));
       return true;
+    case R.id.change_stop:
+      Intent intent = new Intent(this, Stops.class);
+      intent.putExtra(Route.KEY_ROUTE, mRoute);
+      intent.putExtra(Route.KEY_DIRECTION, mDirection);
+      // FIXME: Don't hard-code this. Instead, do it based on the current route and direction.
+      intent.putExtra(Backend.KEY_QUERY, "a=sf-muni&r=F&d=F__OBCTRO");
+      startActivityForResult(intent, STOP_SELECT_REQUEST);
     }
     return false;
   }
+
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    switch (requestCode) {
+    case STOP_SELECT_REQUEST:
+      setViewParams(data);
+    }
+  }
+
 }
