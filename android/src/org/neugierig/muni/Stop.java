@@ -60,8 +60,7 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
 
     mStarView = (CheckBox) findViewById(R.id.star);
     mStarView.setOnClickListener(this);
-    // FIXME: Make Favorites work with the ProximoBus backend
-    //mStarView.setChecked(mStarDB.getStarred(mStop.url));
+    mStarView.setChecked(mStarDB.isStopAFavorite(mRouteId, mStopId));
 
     mBackend = new AsyncBackend(this, this);
     mBackend.start(new PredictionsForStopQuery(mRouteId, mStopId, false));
@@ -94,14 +93,14 @@ public class Stop extends Activity implements AsyncBackend.Delegate,
 
   @Override
   public void onClick(View view) {
-    /*switch (view.getId()) {
+    switch (view.getId()) {
       case R.id.star:
         if (mStarView.isChecked())
-          mStarDB.setStarred(mStop, mRoute, mDirection);
+          mStarDB.addStopAsFavorite(mRouteId, mRouteName, mRunId, mRunName, mStopId, mStopName);
         else
-          mStarDB.unStar(mStop);
+          mStarDB.removeStopAsFavorite(mRouteId, mStopId);
         break;
-        }*/
+    }
   }
 
   @Override
